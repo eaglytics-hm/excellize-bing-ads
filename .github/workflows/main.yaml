@@ -1,0 +1,87 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - master
+      - dev
+  workflow_dispatch:
+
+concurrency: ${{ github.ref }}
+
+env:
+  ENV_KEY: env-vars
+  ENV_FILE: env.yaml
+  GCP_SA: etl-713@excellize.iam.gserviceaccount.com
+
+jobs:
+  set-env:
+    runs-on: ubuntu-latest
+    outputs:
+      fn-name: ${{ steps.set-fn-name.outputs.fn-name }}
+    steps:
+      - if: github.ref_name == 'dev'
+        run: |
+          echo "FUNCTION_NAME=excellize-bing-ads-dev" >> $GITHUB_ENV
+          echo "PUBLIC_URL=https://us-central1-excellize.cloudfunctions.net/excellize-bing-ads-dev" >> $GITHUB_ENV
+
+      - if: github.ref_name == 'master'
+        run: |
+          echo "FUNCTION_NAME=excellize-bing-ads" >> $GITHUB_ENV
+          echo "PUBLIC_URL=https://us-central1-excellize.cloudfunctions.net/excellize-bing-ads" >> $GITHUB_ENV
+
+      - id: set-fn-name
+        run: echo "::set-output name=fn-name::${{ env.FUNCTION_NAME}}"
+
+      - run: |
+          echo "BING_CLIENT_ID: ${{ secrets.BING_CLIENT_ID }}" >> ${{ env.ENV_FILE }}
+          echo "BING_CLIENT_SECRET: ${{ secrets.BING_CLIENT_SECRET }}" >> ${{ env.ENV_FILE }}
+          echo "BING_DEVELOPER_TOKEN: ${{ secrets.BING_DEVELOPER_TOKEN }}" >> ${{ env.ENV_FILE }}
+          echo "BING_REFRESH_TOKEN: ${{ secrets.BING_REFRESH_TOKEN }}" >> ${{ env.ENV_FILE }}
+
+          echo "GCP_SA: ${{ env.GCP_SA }}" >> ${{ env.ENV_FILE }}
+          echo "PUBLIC_URL: ${{ env.PUBLIC_URL }}" >> ${{ env.ENV_FILE }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.ENV_KEY }}
+          path: ${{ env.ENV_FILE }}
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: set-env
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: ${{ env.ENV_KEY }}
+
+      - uses: google-github-actions/auth@v0
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - uses: google-github-actions/setup-gcloud@v0
+
+      - run: >-
+          gcloud functions deploy ${{ needs.set-env.outputs.fn-name }}
+          --entry-point=main
+          --region=us-central1
+          --timeout=530
+          --memory=256MB
+          --runtime=python39
+          --trigger-http
+          --no-user-output-enabled
+          --service-account=${{ env.GCP_SA }}
+          --env-vars-file=${{ env.ENV_FILE }}
+
+  clean-up:
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - run: echo "" > ${{ env.ENV_FILE }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ${{ env.ENV_KEY }}
+          path: ${{ env.ENV_FILE }}

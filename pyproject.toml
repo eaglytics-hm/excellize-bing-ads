@@ -1,0 +1,28 @@
+[tool.poetry]
+name = "excellize-bing-ads"
+version = "1.1"
+description = ""
+authors = ["HM <hieumdd@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "~3.9"
+google-cloud-bigquery = "^2.27.1"
+compose = "^1.2.8"
+bingads = "^13.0.14"
+
+[tool.poetry.dev-dependencies]
+pytest = "^6.2.5"
+black = "^22.3.0"
+mypy = "^0.910"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+addopts = "-s --durations=0"
+
+[tool.mypy]
+python_version = 3.9
+ignore_missing_imports = true
+namespace_packages = true
