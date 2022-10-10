@@ -1,4 +1,4 @@
-name: CI/CD
+name: Cloud Functions
 
 on:
   push:
@@ -12,7 +12,7 @@ concurrency: ${{ github.ref }}
 env:
   ENV_KEY: env-vars
   ENV_FILE: env.yaml
-  GCP_SA: etl-713@excellize.iam.gserviceaccount.com
+  GCP_SA: etl-801@excellize-2.iam.gserviceaccount.com
 
 jobs:
   set-env:
@@ -23,12 +23,12 @@ jobs:
       - if: github.ref_name == 'dev'
         run: |
           echo "FUNCTION_NAME=excellize-bing-ads-dev" >> $GITHUB_ENV
-          echo "PUBLIC_URL=https://us-central1-excellize.cloudfunctions.net/excellize-bing-ads-dev" >> $GITHUB_ENV
+          echo "PUBLIC_URL=https://us-central1-excellize-2.cloudfunctions.net/excellize-bing-ads-dev" >> $GITHUB_ENV
 
       - if: github.ref_name == 'master'
         run: |
           echo "FUNCTION_NAME=excellize-bing-ads" >> $GITHUB_ENV
-          echo "PUBLIC_URL=https://us-central1-excellize.cloudfunctions.net/excellize-bing-ads" >> $GITHUB_ENV
+          echo "PUBLIC_URL=https://us-central1-excellize-2.cloudfunctions.net/excellize-bing-ads" >> $GITHUB_ENV
 
       - id: set-fn-name
         run: echo "::set-output name=fn-name::${{ env.FUNCTION_NAME}}"

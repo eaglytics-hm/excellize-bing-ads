@@ -11,7 +11,7 @@ from bing import pipeline, pipeline_service
 
 TIMEFRAME = [
     ("auto", (None, None)),
-    ("manual", ("2022-01-01", "2022-09-29")),
+    ("manual", ("2022-01-01", "2022-10-10")),
 ]
 
 
